@@ -23,14 +23,12 @@ public:
 
 	static SSL_CTX *createContext()
 	{
-		const SSL_METHOD *method = DTLS_server_method();
-
-		SSL_CTX *ctx = SSL_CTX_new(method);
+		SSL_CTX *ctx = SSL_CTX_new(DTLS_server_method());
 		if (!ctx)
 		{
 			perror("Unable to create SSL context");
 			ERR_print_errors_fp(stderr);
-			exit(EXIT_FAILURE);
+			throw std::runtime_error("Failed to create SSL context");
 		}
 		return ctx;
 	}
@@ -40,17 +38,33 @@ public:
 		if (SSL_CTX_use_certificate_file(ctx, certFile.c_str(), SSL_FILETYPE_PEM) <= 0)
 		{
 			ERR_print_errors_fp(stderr);
-			exit(EXIT_FAILURE);
+			throw std::runtime_error("Failed to load server certificate");
 		}
 		if (SSL_CTX_use_PrivateKey_file(ctx, keyFile.c_str(), SSL_FILETYPE_PEM) <= 0)
 		{
 			ERR_print_errors_fp(stderr);
-			exit(EXIT_FAILURE);
+			throw std::runtime_error("Failed to load server private key");
 		}
 		if (!SSL_CTX_check_private_key(ctx))
 		{
 			std::cerr << "Private key does not match the certificate public key" << std::endl;
-			exit(EXIT_FAILURE);
+			throw std::runtime_error("Private key does not match the certificate");
 		}
+	}
+};
+
+class ClientOpenSSL
+{
+public:
+	static SSL_CTX *createSSLContext(const std::string &certFile, const std::string &keyFile)
+	{
+		const SSL_METHOD *method = DTLS_client_method();
+		SSL_CTX *ctx = SSL_CTX_new(method);
+		if (!ctx)
+		{
+			std::cout << "Failed to create SSL context" << std::endl;
+		}
+
+		return ctx;
 	}
 };

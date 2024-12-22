@@ -14,8 +14,12 @@
 #include <fmt/core.h>
 
 #define KEYSIZE 4096
+
 #define serverCertFile "server-keys/server.crt"
 #define serverKeyFile "server-keys/server.key"
+
+#define clientCertFile "client-keys/client.crt"
+#define clientKeyFile "client-keys/client.key"
 
 class GenerateKeys
 {

@@ -2,6 +2,7 @@
 #include <string>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/dtls1.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
@@ -25,34 +26,40 @@ int main()
 	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 
-	char buffer[BUFFERSIZE];
+	BIO *bio = BIO_new_dgram(sockfd, BIO_NOCLOSE);
+	SSL *ssl = SSL_new(ctx);
+	SSL_set_bio(ssl, bio, bio);
 
-	while (true)
+	if (SSL_accept(ssl) <= 0)
 	{
-		int len = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_addr, &client_len);
-		if (len < 0)
-		{
-			perror("Error receiving data");
-			continue;
-		}
-
-		SSL *ssl = SSL_new(ctx);
-		SSL_set_fd(ssl, sockfd);
-
-		if (SSL_accept(ssl) <= 0)
-		{
-			ERR_print_errors_fp(stderr);
-		}
-		else
-		{
-			std::cout << "Received secured data: " << buffer << std::endl;
-		}
-
-		SSL_free(ssl);
+		std::cout << "SSL handshake failed" << std::endl;
 	}
 
+	char buffer[BUFFERSIZE];
+	while (true)
+	{
+		memset(buffer, 0, BUFFERSIZE);
+		int n = SSL_read(ssl, buffer, BUFFERSIZE);
+		if (n <= 0)
+		{
+			std::cout << "Client has exited." << std::endl;
+			break;
+		}
+
+		std::cout << "Client: " << buffer << "\n";
+
+		const char *response = "Message received securely!";
+		if (SSL_write(ssl, response, strlen(response)) <= 0)
+		{
+			std::cout << "Client has exited." << std::endl;
+			break;
+		}
+	}
+
+	SSL_free(ssl);
 	close(sockfd);
 	SSL_CTX_free(ctx);
-	OpenSSL::cleanupOpenssl();
+	EVP_cleanup();
+
 	return 0;
 }

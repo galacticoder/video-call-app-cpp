@@ -1,4 +1,6 @@
 .vscode
-/src/main.cpp
-/src/picture.png
+/for-later
 /src/server
+/src/client
+/src/server-keys
+/src/client-keys
