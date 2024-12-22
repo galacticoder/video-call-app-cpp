@@ -12,6 +12,7 @@
 
 int main()
 {
+	std::cout << "test" << std::endl;
 	OpenSSL::initOpenssl();
 	GenerateKeys::generateCertificate(serverKeyFile, serverCertFile);
 
